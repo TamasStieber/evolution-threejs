@@ -1,10 +1,8 @@
 import './style.css';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import Stats from 'three/addons/libs/stats.module.js';
-import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import Carnivore from './Carnivore';
 import Herbivore from './Herbivore';
 import Map from './Map';
@@ -51,13 +49,6 @@ directionallight.shadow.mapSize.width = 2048;
 directionallight.shadow.mapSize.height = 2048;
 scene.add(directionallight);
 
-// const camera = new THREE.PerspectiveCamera(
-//   75,
-//   window.innerWidth / window.innerHeight,
-//   0.1,
-//   100
-// );
-
 const mapAspectRatio = mapWidth / mapHeight;
 const cameraMargin = 10;
 const mapWidthMargin = cameraMargin;
@@ -69,7 +60,6 @@ const top = (mapHeight + mapHeightMargin) / 2;
 const bottom = -(mapHeight + mapHeightMargin) / 2;
 
 const camera = new THREE.OrthographicCamera(left, right, top, bottom);
-// const camera = new THREE.OrthographicCamera(-50, 50, 30, -30);
 camera.position.set(0, 100, 0);
 camera.lookAt(0, 0, 0);
 
@@ -85,22 +75,14 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// const controls = new OrbitControls(camera, renderer.domElement);
-// controls.enableDamping = true;
-
-const texture = new THREE.TextureLoader().load(
-  'https://sbcode.net/img/grid.png'
-);
-texture.colorSpace = THREE.SRGBColorSpace;
-
 const carnivoreCount = 50;
 const herbivoreCount = 50;
 
 const map = new Map(mapWidth, mapHeight, true);
 scene.add(map);
 
-// const blobs: Carnivore | Herbivore[] = [];
-const blobs: THREE.Object3D[] = [];
+const blobs: (Carnivore | Herbivore)[] = [];
+// const blobs: THREE.Object3D[] = [];
 
 const model = '/blob.glb';
 let dummyBlob;
@@ -128,7 +110,6 @@ for (let i = 0; i < carnivoreCount; i++) {
       x: x,
       z: z,
       controllerType: ControllerTypes.NONE,
-      intersectingObjects: blobs,
     })
   );
 }
@@ -142,13 +123,11 @@ const carnivoreData = {
   x: 0,
   z: 0,
   controllerType: ControllerTypes.KEYBOARD,
-  intersectingObjects: blobs,
 };
 const herbivoreDate = {
   x: 10,
   z: 10,
   controllerType: ControllerTypes.NONE,
-  intersectingObjects: map.walls,
 };
 
 const carnivore = new Carnivore(carnivoreData);
@@ -161,52 +140,6 @@ blobs.push(herbivore);
 scene.add(...blobs);
 // carnivore.position.z = minZ;
 
-const data = {
-  environment: true,
-  background: true,
-  mapEnabled: false,
-  planeVisible: false,
-};
-
-const gui = new GUI();
-
-gui.add(data, 'environment').onChange(() => {
-  if (data.environment) {
-    scene.environment = environmentTexture;
-    directionallight.visible = false;
-  } else {
-    scene.environment = null;
-    directionallight.visible = true;
-  }
-});
-
-gui.add(scene, 'environmentIntensity', 0, 2, 0.01); // new in Three r163. Can be used instead of `renderer.toneMapping` with `renderer.toneMappingExposure`
-
-gui.add(renderer, 'toneMappingExposure', 0, 2, 0.01);
-
-gui.add(data, 'background').onChange(() => {
-  if (data.background) {
-    scene.background = environmentTexture;
-  } else {
-    scene.background = null;
-  }
-});
-
-gui.add(scene, 'backgroundBlurriness', 0, 1, 0.01);
-
-gui.add(data, 'mapEnabled').onChange(() => {
-  if (data.mapEnabled) {
-    // material.map = texture;
-  } else {
-    // material.map = null;
-  }
-  // material.needsUpdate = true;
-});
-
-gui.add(data, 'planeVisible').onChange((v) => {
-  // plane.visible = v;
-});
-
 const stats = new Stats();
 document.body.appendChild(stats.dom);
 
@@ -215,7 +148,7 @@ function animate() {
 
   // controls.update();
 
-  carnivore.update();
+  carnivore.updateEntity(map.walls, blobs);
 
   renderer.render(scene, camera);
 

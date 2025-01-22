@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import Blob from './Blob';
 import { BlobTypes } from './interfaces';
+import Wall from './Wall';
+import Herbivore from './Herbivore';
 
 const ENERGY_CONSUMPTION_RATE = 0.5;
 const ENERGY_GAIN_RATE = 0.1;
@@ -20,11 +22,10 @@ class Carnivore extends Blob {
     this.loadModel(BlobTypes.CARNIVORE);
   }
 
-  update() {
+  updateEntity(walls: Wall[], blobs: (Carnivore | Herbivore)[]) {
     super.update();
 
-    // this.castRay();
-    this.castMultipleRays(); // Call the method to cast multiple rays
+    this.castMultipleRays(blobs); // Call the method to cast multiple rays
 
     const isSprinting =
       this.controller?.sprint &&
@@ -48,31 +49,7 @@ class Carnivore extends Blob {
     if (this.energy > ENERGY_RECOVERY_THRESHOLD) this.energyDepleted = false;
   }
 
-  // private castRay() {
-  //   const origin = new THREE.Vector3(
-  //     this.position.x + 0.5,
-  //     this.position.y,
-  //     this.position.z + 0.5
-  //   );
-  //   let direction = new THREE.Vector3();
-  //   this.getWorldDirection(direction);
-
-  //   this.raycaster.set(origin, direction.normalize());
-  //   this.raycaster.far = this.rayLength;
-
-  //   const intersects = this.raycaster.intersectObjects(
-  //     this.intersectingObjects,
-  //     true
-  //   );
-
-  //   this.visualizeRay(this.raycaster);
-
-  //   if (intersects.length > 0) {
-  //     console.log(intersects[0]); // Log first hit object
-  //   }
-  // }
-
-  private castMultipleRays() {
+  private castMultipleRays(blobs: (Carnivore | Herbivore)[]) {
     // Get the forward direction of the carnivore
     let forwardDirection = new THREE.Vector3();
     this.getWorldDirection(forwardDirection); // Get the forward direction
@@ -103,74 +80,16 @@ class Carnivore extends Blob {
       this.raycaster.set(rayOrigin, rayDirection);
       this.raycaster.far = this.rayLength;
 
-      const intersects = this.raycaster.intersectObjects(
-        this.intersectingObjects,
-        true
-      );
+      const intersects = this.raycaster.intersectObjects(blobs, true);
 
-      // this.visualizeRay(this.raycaster, i); // Uncomment for debugging
+      this.visualizeRay(this.raycaster, i); // Uncomment for debugging
 
       if (intersects.length > 0) {
         // console.log(`Ray ${i} hit object at distance: ${intersects[0].object}`);
-        console.log(intersects[0].object.parent);
+        // console.log(intersects[0].object.parent);
       }
     }
   }
-
-  // private castMultipleRays() {
-  //   // Get the forward direction of the carnivore
-  //   const origin = new THREE.Vector3(
-  //     this.position.x,
-  //     this.position.y,
-  //     this.position.z
-  //   );
-  //   let direction = new THREE.Vector3();
-  //   this.getWorldDirection(direction); // Forward direction of the carnivore
-
-  //   // Calculate the step for each ray within the field of view
-  //   const step = this.fov / (this.numRays - 1); // Step size for distributing rays
-
-  //   // Cast rays at different angles within the field of view
-  //   for (let i = 0; i < this.numRays; i++) {
-  //     // Calculate the angle for each ray within the field of view
-  //     const angle = (i * step - this.fov / 2) * (Math.PI / 180); // Convert degrees to radians
-  //     const rayDirection = direction
-  //       .clone()
-  //       .applyAxisAngle(new THREE.Vector3(0, 1, 0), angle); // Rotate direction
-
-  //     // Cast the ray using the raycaster
-  //     this.raycaster.set(origin, rayDirection.normalize());
-  //     this.raycaster.far = this.rayLength;
-
-  //     const intersects = this.raycaster.intersectObjects(
-  //       this.intersectingObjects,
-  //       true
-  //     );
-  //     // this.visualizeRay(this.raycaster, i);
-
-  //     if (intersects.length > 0) {
-  //       console.log(`Ray ${i} hit object at distance: ${intersects[0].distance}`)
-  //     }
-  //   }
-  // }
-
-  // private visualizeRay(raycaster: THREE.Raycaster) {
-  //   const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
-  //   const direction = raycaster.ray.direction
-  //     .clone()
-  //     .multiplyScalar(raycaster.far);
-  //   const origin = new THREE.Vector3(
-  //     this.position.x + 0.5,
-  //     this.position.y,
-  //     this.position.z + 0.5
-  //   );
-  //   const points = [origin.clone(), origin.clone().add(direction)];
-  //   const geometry = new THREE.BufferGeometry().setFromPoints(points);
-  //   const line = new THREE.Line(geometry, material);
-
-  //   this.parent?.add(line); // Add line to the scene
-  //   setTimeout(() => this.parent?.remove(line), 10); // Remove after 100ms
-  // }
 
   private visualizeRay(raycaster: THREE.Raycaster, rayIndex: number) {
     const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
